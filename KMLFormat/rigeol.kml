@@ -1,5 +1,4 @@
-<?xml version="1.0" encoding="UTF-8"?>
-<kml xmlns="http://earth.google.com/kml/2.2">
+<?xml version="1.0" encoding="UTF-8" standalone="no"?><kml xmlns="http://earth.google.com/kml/2.2">
   <Document>
     <Style id="geol_poly">
       <PolyStyle>
