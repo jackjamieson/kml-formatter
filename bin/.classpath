@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<classpath>
+	<classpathentry kind="src" path="src"/>
+	<classpathentry excluding="src/" kind="src" path=""/>
+	<classpathentry kind="con" path="org.eclipse.jdt.launching.JRE_CONTAINER/org.eclipse.jdt.internal.debug.ui.launcher.StandardVMType/JavaSE-1.7"/>
+	<classpathentry kind="lib" path="U:/eclipse/KMLFormat/JavaAPIforKml-2.2.1.jar"/>
+	<classpathentry kind="lib" path="U:/eclipse/KMLFormat/jaxb-api.jar"/>
+	<classpathentry kind="lib" path="U:/eclipse/KMLFormat/jaxb-core.jar"/>
+	<classpathentry kind="lib" path="U:/eclipse/KMLFormat/jaxb-impl.jar"/>
+	<classpathentry kind="lib" path="U:/eclipse/KMLFormat/jaxb-jxc.jar"/>
+	<classpathentry kind="lib" path="U:/eclipse/KMLFormat/jaxb-xjc.jar"/>
+	<classpathentry kind="lib" path="miglayout15-swing.jar" sourcepath="miglayout-src.zip"/>
+	<classpathentry kind="output" path="bin"/>
+</classpath>

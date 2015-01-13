@@ -1,0 +1,87 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<kml xmlns="http://www.opengis.net/kml/2.2" xmlns:gx="http://www.google.com/kml/ext/2.2" xmlns:kml="http://www.opengis.net/kml/2.2" xmlns:atom="http://www.w3.org/2005/Atom">
+<Folder>
+	<name>Units template empty</name>
+	<Folder>
+		<name>Amphibolite</name>
+		<visibility>0</visibility>
+	</Folder>
+	<Folder>
+		<name>Argillite and hornfels</name>
+		<visibility>0</visibility>
+	</Folder>
+	<Folder>
+		<name>Carbonates</name>
+		<visibility>0</visibility>
+	</Folder>
+	<Folder>
+		<name>Felsic intrusives and granofels</name>
+		<visibility>0</visibility>
+	</Folder>
+	<Folder>
+		<name>Felsic extrusives</name>
+		<visibility>0</visibility>
+	</Folder>
+	<Folder>
+		<name>Gneiss</name>
+		<visibility>0</visibility>
+	</Folder>
+	<Folder>
+		<name>Granofels</name>
+	</Folder>
+	<Folder>
+		<name>Intermediate intrusives</name>
+	</Folder>
+	<Folder>
+		<name>Intermediate extrusives</name>
+	</Folder>
+	<Folder>
+		<name>Jurassic plutonic</name>
+	</Folder>
+	<Folder>
+		<name>Jurassic sedimentary</name>
+	</Folder>
+	<Folder>
+		<name>Jurassic volcanic</name>
+	</Folder>
+	<Folder>
+		<name>Marble and calcareous sedimentary</name>
+	</Folder>
+	<Folder>
+		<name>Mafic extrusives and metavolcanics</name>
+	</Folder>
+	<Folder>
+		<name>Mafic intrusives</name>
+	</Folder>
+	<Folder>
+		<name>Mylonite and tectonite</name>
+	</Folder>
+	<Folder>
+		<name>Sandstone</name>
+	</Folder>
+	<Folder>
+		<name>Schist</name>
+	</Folder>
+	<Folder>
+		<name>Shale</name>
+	</Folder>
+	<Folder>
+		<name>Siltstone</name>
+	</Folder>
+	<Folder>
+		<name>Slate</name>
+	</Folder>
+	<Folder>
+		<name>Triassic sedimentary</name>
+	</Folder>
+	<Folder>
+		<name>Quartzite</name>
+	</Folder>
+	<Folder>
+		<name>Ultramafics</name>
+	</Folder>
+	<Folder>
+		<name>Unassigned</name>
+	</Folder>
+</Folder>
+</kml>
