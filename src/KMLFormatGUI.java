@@ -2,12 +2,16 @@ import java.awt.EventQueue;
 import java.awt.GridLayout;
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
+import java.io.File;
+import java.io.FileInputStream;
 import java.io.IOException;
+import java.io.InputStream;
 import java.util.List;
 import java.util.Set;
 import java.util.TreeSet;
 
 import javax.swing.JEditorPane;
+import javax.swing.JFileChooser;
 import javax.swing.JFrame;
 import javax.swing.JMenu;
 import javax.swing.JMenuBar;
@@ -38,10 +42,21 @@ public class KMLFormatGUI implements TreeSelectionListener {
 	private JFrame frmKmlFormatter;
 	private JEditorPane contentPane;
 
-	private Parse parse = new Parse();
+	private Parse parse;
 
 	private Set<String> lithicGroups;
+	private Set<String> ages;
+
 	private JProgressBar progressBar;
+
+	private JFileChooser fc;
+
+	private Boolean hasFile = false;
+	private Boolean createdGUI = false;
+
+	private JSplitPane splitPane;
+	
+	private int count = 0;
 
 	/**
 	 * Launch the application.
@@ -80,20 +95,74 @@ public class KMLFormatGUI implements TreeSelectionListener {
 		 */
 	}
 
+	private void openFile() {
+
+		count++;
+		
+		if (createdGUI) {
+			frmKmlFormatter.getContentPane().remove(splitPane);
+
+		}
+		if (!createdGUI) {
+			createdGUI = true;
+		}
+
+		DefaultMutableTreeNode top = new DefaultMutableTreeNode(
+				parse.getDocumentName());
+		createNodes(top);
+
+		tree = new JTree(top);
+		tree.getSelectionModel().setSelectionMode(
+				TreeSelectionModel.SINGLE_TREE_SELECTION);
+
+		tree.addTreeSelectionListener(this);
+
+		JScrollPane scrollPane = new JScrollPane(tree);
+		// scrollPane.setBounds(10, 25, 572, 537);
+		// frmKmlFormatter.getContentPane().add(scrollPane);
+
+		contentPane = new JEditorPane();
+		contentPane.setEditable(false);
+		JScrollPane contentScroll = new JScrollPane(contentPane);
+
+		splitPane = new JSplitPane(JSplitPane.HORIZONTAL_SPLIT);
+		splitPane.setLeftComponent(scrollPane);
+		splitPane.setRightComponent(contentScroll);
+
+		// Dimension minimumSize = new Dimension(250, 200);
+		frmKmlFormatter.getContentPane().setLayout(new GridLayout(0, 1, 0, 0));
+		// scrollPane.setMinimumSize(minimumSize);
+		// contentScroll.setMinimumSize(minimumSize);
+		splitPane.setDividerLocation(300);
+		// splitPane.setPreferredSize(new Dimension(200, 500));
+
+		frmKmlFormatter.getContentPane().add(splitPane);
+
+		frmKmlFormatter.validate();
+
+	}
+
 	private void createNodes(DefaultMutableTreeNode top) {
 		DefaultMutableTreeNode list = null;
 		DefaultMutableTreeNode groups = null;
+		DefaultMutableTreeNode age = null;
 
 		DefaultMutableTreeNode child = null;
 
-		list = new DefaultMutableTreeNode("Placemarks");
+		list = new DefaultMutableTreeNode("Features");
 		top.add(list);
 
 		groups = new DefaultMutableTreeNode("Lithic Groups");
 		top.add(groups);
 
+		age = new DefaultMutableTreeNode("Age");
+		top.add(age);
+
 		List<Feature> placemarks = parse.getFeatures();
 		lithicGroups = new TreeSet<String>();
+		ages = new TreeSet<String>();
+
+		
 
 		for (Object obj : placemarks) {
 
@@ -103,6 +172,7 @@ public class KMLFormatGUI implements TreeSelectionListener {
 						p.getStyleUrl());
 
 				lithicGroups.add(pmark.getLithicGroup());
+				ages.add(pmark.getAge());
 
 				child = new DefaultMutableTreeNode(pmark);
 				list.add(child);
@@ -146,6 +216,34 @@ public class KMLFormatGUI implements TreeSelectionListener {
 
 		}
 
+		for (String str : ages) {
+			Dir d = new Dir(str);
+
+			child = new DefaultMutableTreeNode(d);
+			age.add(child);
+
+		}
+		
+		for (Object obj : placemarks) {
+			Placemark p = (Placemark) obj;
+			String ageStr = Pmark.getAgeGlobal(p.getName());
+
+			int index = 0;
+			try {
+				while (age.children().hasMoreElements()) {
+					if (age.getChildAt(index).toString().equals(ageStr)) {
+						DefaultMutableTreeNode node = (DefaultMutableTreeNode) age
+								.getChildAt(index);
+
+						node.add(new DefaultMutableTreeNode(p.getName()));
+					}
+					index++;
+				}
+			} catch (IndexOutOfBoundsException excp) {
+			}
+
+		}
+
 	}
 
 	/**
@@ -159,7 +257,7 @@ public class KMLFormatGUI implements TreeSelectionListener {
 		}
 
 		frmKmlFormatter = new JFrame();
-		frmKmlFormatter.setTitle("KML Formatter");
+		frmKmlFormatter.setTitle("USGS KML Formatter");
 		frmKmlFormatter.setBounds(100, 100, 800, 600);
 		frmKmlFormatter.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
 
@@ -167,36 +265,41 @@ public class KMLFormatGUI implements TreeSelectionListener {
 
 		// list = new JList();
 		// Create the nodes.
-		DefaultMutableTreeNode top = new DefaultMutableTreeNode(
-				parse.getDocumentName());
-		createNodes(top);
+		if (hasFile) {
+			DefaultMutableTreeNode top = new DefaultMutableTreeNode(
+					parse.getDocumentName());
+			createNodes(top);
 
-		tree = new JTree(top);
-		tree.getSelectionModel().setSelectionMode(
-				TreeSelectionModel.SINGLE_TREE_SELECTION);
+			tree = new JTree(top);
+			tree.getSelectionModel().setSelectionMode(
+					TreeSelectionModel.SINGLE_TREE_SELECTION);
 
-		tree.addTreeSelectionListener(this);
+			tree.addTreeSelectionListener(this);
 
-		JScrollPane scrollPane = new JScrollPane(tree);
-		// scrollPane.setBounds(10, 25, 572, 537);
-		// frmKmlFormatter.getContentPane().add(scrollPane);
+			JScrollPane scrollPane = new JScrollPane(tree);
+			// scrollPane.setBounds(10, 25, 572, 537);
+			// frmKmlFormatter.getContentPane().add(scrollPane);
 
-		contentPane = new JEditorPane();
-		contentPane.setEditable(false);
-		JScrollPane contentScroll = new JScrollPane(contentPane);
+			contentPane = new JEditorPane();
+			contentPane.setEditable(false);
+			JScrollPane contentScroll = new JScrollPane(contentPane);
 
-		JSplitPane splitPane = new JSplitPane(JSplitPane.HORIZONTAL_SPLIT);
-		splitPane.setLeftComponent(scrollPane);
-		splitPane.setRightComponent(contentScroll);
+			splitPane = new JSplitPane(JSplitPane.HORIZONTAL_SPLIT);
+			splitPane.setLeftComponent(scrollPane);
+			splitPane.setRightComponent(contentScroll);
 
-		// Dimension minimumSize = new Dimension(250, 200);
-		frmKmlFormatter.getContentPane().setLayout(new GridLayout(0, 1, 0, 0));
-		// scrollPane.setMinimumSize(minimumSize);
-		// contentScroll.setMinimumSize(minimumSize);
-		splitPane.setDividerLocation(300);
-		// splitPane.setPreferredSize(new Dimension(200, 500));
+			// Dimension minimumSize = new Dimension(250, 200);
+			frmKmlFormatter.getContentPane().setLayout(
+					new GridLayout(0, 1, 0, 0));
+			// scrollPane.setMinimumSize(minimumSize);
+			// contentScroll.setMinimumSize(minimumSize);
+			splitPane.setDividerLocation(300);
+			// splitPane.setPreferredSize(new Dimension(200, 500));
 
-		frmKmlFormatter.getContentPane().add(splitPane);
+			frmKmlFormatter.getContentPane().add(splitPane);
+		}
+
+		fc = new JFileChooser();
 
 		JMenuBar menuBar_1 = new JMenuBar();
 		frmKmlFormatter.setJMenuBar(menuBar_1);
@@ -204,59 +307,146 @@ public class KMLFormatGUI implements TreeSelectionListener {
 		JMenu mnFile = new JMenu("File");
 		menuBar_1.add(mnFile);
 
-		JMenuItem mntmOpenKml = new JMenuItem("Open KML");
-		mnFile.add(mntmOpenKml);
-
-		JMenuItem mntmExportAsKml = new JMenuItem("Export as KML");
-		mntmExportAsKml.addMouseListener(new MouseAdapter() {
+		/*
+		 * 
+		 * 
+		 * OPEN FILE DIALOG
+		 */
+		JMenuItem mntmOpenKml = new JMenuItem("Open File");
+		mntmOpenKml.addMouseListener(new MouseAdapter() {
 			@Override
 			public void mouseReleased(MouseEvent arg0) {
+				int returnValue = fc.showOpenDialog(null);
 
-				List<Feature> placemarks = parse.getFeatures();
-				//parse.cleanUp();
-				System.out.println(placemarks.size());
-				
-				
-				for (String str : lithicGroups) {
+				if (returnValue == JFileChooser.APPROVE_OPTION) {
+					progressBar.setVisible(true);
+					class MyWorker1 extends SwingWorker<String, Void> {
+						protected String doInBackground() {
+							// List<Feature> placemarks = parse.getFeatures();
+							// parse.cleanUp((Collection)placemarks);
+							// parse.cleanUp(placemarks);\
+							File selectedFile = fc.getSelectedFile();
 
-					Folder folder = parse.addLithicGroupFolders(str);
+							try {
+								InputStream is = new FileInputStream(
+										selectedFile);
 
-					for (Object obj : placemarks) {
-						try {
-							Placemark p = (Placemark) obj;
-							if (Pmark.getLithicGroupGlobal(p.getStyleUrl())
-									.equals(str)) {
-								parse.addToFolder(folder, p);
+								parse = new Parse(is);
+							} catch (IOException e) {
 
 							}
-						} catch (ClassCastException e) {
+							hasFile = true;
+							openFile();
+
+							return "Done";
+
+						}
+
+						protected void done() {
+							progressBar.setVisible(false);
+
 						}
 					}
 
+					new MyWorker1().execute();
+
+					// System.out.println(selectedFile.toString());
+				} else {
+
 				}
+			}
+		});
+		mnFile.add(mntmOpenKml);
 
-				progressBar.setVisible(true);
-				progressBar.setIndeterminate(true);
-				class MyWorker extends SwingWorker<String, Void> {
-					protected String doInBackground() {
+		JMenu mnExportAs = new JMenu("Export as...");
+		mnFile.add(mnExportAs);
 
-						parse.reWrite();
+		JMenuItem mntmKmlall = new JMenuItem("KML");
+		mntmKmlall.addMouseListener(new MouseAdapter() {
+			@Override
+			public void mouseReleased(MouseEvent arg0) {
+				int returnVal = fc.showSaveDialog(null);
 
-						return "Done";
+				if (returnVal == JFileChooser.APPROVE_OPTION) {
+					final File file = fc.getSelectedFile();
+
+					List<Feature> placemarks = parse.getFeatures();
+					Object[] placm = placemarks.toArray();
+					// parse.cleanUp((Collection)placemarks);
+					// parse.cleanUp(placemarks);
+
+					// System.out.println(placemarks.size());
+					if(count == 1)
+					{
+						parse.createSepFolders();
+						count = 0;
+					}
+					
+					for (String str : ages) {
+
+						Folder folder = parse.addAgeFolders(str);
+
+						for (Object obj : placm) {
+							try {
+								Placemark p = (Placemark) obj;
+								if (Pmark.getAgeGlobal(p.getName())
+										.equals(str)) {
+									parse.addToFolderNoDelete(folder, p);
+
+								}
+							} catch (ClassCastException e2) {
+							}
+						}
 
 					}
 					
-					protected void done(){
-						progressBar.setVisible(false);
+					for (String str : lithicGroups) {
+
+						Folder folder = parse.addLithicGroupFolders(str);
+
+						for (Object obj : placm) {
+							try {
+								Placemark p = (Placemark) obj;
+								if (Pmark.getLithicGroupGlobal(p.getStyleUrl())
+										.equals(str)) {
+									parse.addToFolder(folder, p);
+
+								}
+							} catch (ClassCastException e) {
+							}
+						}
 
 					}
+
+					progressBar.setVisible(true);
+					progressBar.setIndeterminate(true);
+					class MyWorker extends SwingWorker<String, Void> {
+						protected String doInBackground() {
+							// List<Feature> placemarks = parse.getFeatures();
+							// parse.cleanUp((Collection)placemarks);
+							// parse.cleanUp(placemarks);
+							parse.reWrite(file.toString());
+
+							return "Done";
+
+						}
+
+						protected void done() {
+							progressBar.setVisible(false);
+
+						}
+					}
+
+					new MyWorker().execute();
+
 				}
-
-				new MyWorker().execute();
-
+				
 			}
 		});
-		mnFile.add(mntmExportAsKml);
+		mnExportAs.add(mntmKmlall);
+		
+		JMenuItem mntmKmz = new JMenuItem("KMZ");
+		mnExportAs.add(mntmKmz);
 
 		JMenu mnHelp = new JMenu("Help");
 		menuBar_1.add(mnHelp);
@@ -328,12 +518,20 @@ public class KMLFormatGUI implements TreeSelectionListener {
 				displayContents(pmark);
 			} catch (ClassCastException cce) {
 
+				if(nodeInfo instanceof String){
+					contentPane.setText("");
+				}
+				
+				else {
 				Dir dir = (Dir) nodeInfo;
 				contentPane.setText("");
 				displayContents(dir);
+				}
 			}
 
 		}
 
 	}
+	
+	
 }

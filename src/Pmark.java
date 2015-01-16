@@ -35,11 +35,33 @@ public class Pmark {
 		
 	}
 	
+	public String getAge() {
+		String wholeString = name;
+		String age = "";
+		if(wholeString.contains("("))
+			age = wholeString.substring(wholeString.indexOf("(")+1, wholeString.length()-1);
+		else age = "Other";
+		
+		return age;
+		
+	}
+	
 	public static String getLithicGroupGlobal(String placemark){
 		String wholeString = placemark;
 		String lithicGroup = wholeString.substring(wholeString.indexOf("#")+1, wholeString.length());
 		
 		return lithicGroup;
+	}
+	
+	public static String getAgeGlobal(String placemark) {
+		String wholeString = placemark;
+		String age = "";
+		if(wholeString.contains("("))
+			age = wholeString.substring(wholeString.indexOf("(")+1, wholeString.length()-1);
+		else age = "Other";
+		
+		return age;
+		
 	}
 
 }

@@ -10,5 +10,6 @@
 	<classpathentry kind="lib" path="U:/eclipse/KMLFormat/jaxb-jxc.jar"/>
 	<classpathentry kind="lib" path="U:/eclipse/KMLFormat/jaxb-xjc.jar"/>
 	<classpathentry kind="lib" path="miglayout15-swing.jar" sourcepath="miglayout-src.zip"/>
+	<classpathentry kind="lib" path="U:/eclipse/KMLFormat/commons-io-2.4.jar"/>
 	<classpathentry kind="output" path="bin"/>
 </classpath>
