@@ -16,6 +16,7 @@ import javax.swing.JFrame;
 import javax.swing.JMenu;
 import javax.swing.JMenuBar;
 import javax.swing.JMenuItem;
+import javax.swing.JOptionPane;
 import javax.swing.JProgressBar;
 import javax.swing.JScrollPane;
 import javax.swing.JSplitPane;
@@ -55,7 +56,11 @@ public class KMLFormatGUI implements TreeSelectionListener {
 	private Boolean createdGUI = false;
 
 	private JSplitPane splitPane;
-	
+
+	private JMenuBar menuBar_1;
+	private JMenuItem mntmOpenKml;
+	private JMenu mnExportAs;
+
 	private int count = 0;
 
 	/**
@@ -98,7 +103,7 @@ public class KMLFormatGUI implements TreeSelectionListener {
 	private void openFile() {
 
 		count++;
-		
+
 		if (createdGUI) {
 			frmKmlFormatter.getContentPane().remove(splitPane);
 
@@ -142,106 +147,123 @@ public class KMLFormatGUI implements TreeSelectionListener {
 
 	}
 
+	// Prepare for agnostic use?
+	private void createNodesAgnostic(DefaultMutableTreeNode top) {
+		DefaultMutableTreeNode children = null;
+		List<Feature> features = parse.getFeatures();
+
+		for (Feature feat : features) {
+			children = new DefaultMutableTreeNode(feat.getName());
+
+			for (Object feat2 : feat.getFeatureSimpleExtension()) {
+				DefaultMutableTreeNode down = new DefaultMutableTreeNode(
+						((Feature) feat2).getName());
+				children.add(down);
+			}
+			top.add(children);
+		}
+	}
+
+	// Create the nodes for the USGS KML parser
 	private void createNodes(DefaultMutableTreeNode top) {
-		DefaultMutableTreeNode list = null;
-		DefaultMutableTreeNode groups = null;
-		DefaultMutableTreeNode age = null;
+		try {
+			DefaultMutableTreeNode list = null;
+			DefaultMutableTreeNode groups = null;
+			DefaultMutableTreeNode age = null;
 
-		DefaultMutableTreeNode child = null;
+			DefaultMutableTreeNode child = null;
 
-		list = new DefaultMutableTreeNode("Features");
-		top.add(list);
+			list = new DefaultMutableTreeNode("Features");
+			top.add(list);
 
-		groups = new DefaultMutableTreeNode("Lithic Groups");
-		top.add(groups);
+			groups = new DefaultMutableTreeNode("Lithic Groups");
+			top.add(groups);
 
-		age = new DefaultMutableTreeNode("Age");
-		top.add(age);
+			age = new DefaultMutableTreeNode("Age");
+			top.add(age);
 
-		List<Feature> placemarks = parse.getFeatures();
-		lithicGroups = new TreeSet<String>();
-		ages = new TreeSet<String>();
+			List<Feature> placemarks = parse.getFeatures();
+			lithicGroups = new TreeSet<String>();
+			ages = new TreeSet<String>();
 
-		
+			for (Object obj : placemarks) {
 
-		for (Object obj : placemarks) {
+				try {
+					Placemark p = (Placemark) obj;
+					Pmark pmark = new Pmark(p.getName(), p.getDescription(),
+							p.getStyleUrl());
 
-			try {
+					lithicGroups.add(pmark.getLithicGroup());
+					ages.add(pmark.getAge());
+
+					child = new DefaultMutableTreeNode(pmark);
+					list.add(child);
+				} catch (ClassCastException e) {
+				}
+
+			}
+
+			// Add the lithic groups to the top level folder
+			for (String str : lithicGroups) {
+
+				Dir d = new Dir(str);
+
+				child = new DefaultMutableTreeNode(d);
+				groups.add(child);
+			}
+
+			for (Object obj : placemarks) {
 				Placemark p = (Placemark) obj;
-				Pmark pmark = new Pmark(p.getName(), p.getDescription(),
-						p.getStyleUrl());
+				String group = Pmark.getLithicGroupGlobal(p.getStyleUrl());
 
-				lithicGroups.add(pmark.getLithicGroup());
-				ages.add(pmark.getAge());
+				int index = 0;
+				try {
+					while (groups.children().hasMoreElements()) {
+						if (groups.getChildAt(index).toString().equals(group)) {
+							DefaultMutableTreeNode node = (DefaultMutableTreeNode) groups
+									.getChildAt(index);
 
-				child = new DefaultMutableTreeNode(pmark);
-				list.add(child);
-			} catch (ClassCastException e) {
-				/*
-				 * Folder f = (Folder) obj; Dir d = new Dir(f.getName());
-				 * 
-				 * 
-				 * child = new DefaultMutableTreeNode(d); groups.add(child);
-				 */
-			}
-
-		}
-
-		// Add the lithic groups to the top level folder
-		for (String str : lithicGroups) {
-
-			Dir d = new Dir(str);
-
-			child = new DefaultMutableTreeNode(d);
-			groups.add(child);
-		}
-
-		for (Object obj : placemarks) {
-			Placemark p = (Placemark) obj;
-			String group = Pmark.getLithicGroupGlobal(p.getStyleUrl());
-
-			int index = 0;
-			try {
-				while (groups.children().hasMoreElements()) {
-					if (groups.getChildAt(index).toString().equals(group)) {
-						DefaultMutableTreeNode node = (DefaultMutableTreeNode) groups
-								.getChildAt(index);
-
-						node.add(new DefaultMutableTreeNode(p.getName()));
+							node.add(new DefaultMutableTreeNode(p.getName()));
+						}
+						index++;
 					}
-					index++;
+				} catch (IndexOutOfBoundsException excp) {
 				}
-			} catch (IndexOutOfBoundsException excp) {
+
 			}
 
-		}
+			for (String str : ages) {
+				Dir d = new Dir(str);
 
-		for (String str : ages) {
-			Dir d = new Dir(str);
+				child = new DefaultMutableTreeNode(d);
+				age.add(child);
 
-			child = new DefaultMutableTreeNode(d);
-			age.add(child);
+			}
 
-		}
-		
-		for (Object obj : placemarks) {
-			Placemark p = (Placemark) obj;
-			String ageStr = Pmark.getAgeGlobal(p.getName());
+			for (Object obj : placemarks) {
+				Placemark p = (Placemark) obj;
+				String ageStr = Pmark.getAgeGlobal(p.getName());
 
-			int index = 0;
-			try {
-				while (age.children().hasMoreElements()) {
-					if (age.getChildAt(index).toString().equals(ageStr)) {
-						DefaultMutableTreeNode node = (DefaultMutableTreeNode) age
-								.getChildAt(index);
+				int index = 0;
+				try {
+					while (age.children().hasMoreElements()) {
+						if (age.getChildAt(index).toString().equals(ageStr)) {
+							DefaultMutableTreeNode node = (DefaultMutableTreeNode) age
+									.getChildAt(index);
 
-						node.add(new DefaultMutableTreeNode(p.getName()));
+							node.add(new DefaultMutableTreeNode(p.getName()));
+						}
+						index++;
 					}
-					index++;
+				} catch (IndexOutOfBoundsException excp) {
 				}
-			} catch (IndexOutOfBoundsException excp) {
-			}
 
+			}
+		} catch (Exception e) {
+			e.printStackTrace();
+			JOptionPane.showMessageDialog(frmKmlFormatter,
+					"Possible errors opening this file!\nAre you sure it is"
+							+ " an unchanged USGS State KML?", "Error", 2);
 		}
 
 	}
@@ -301,7 +323,7 @@ public class KMLFormatGUI implements TreeSelectionListener {
 
 		fc = new JFileChooser();
 
-		JMenuBar menuBar_1 = new JMenuBar();
+		menuBar_1 = new JMenuBar();
 		frmKmlFormatter.setJMenuBar(menuBar_1);
 
 		JMenu mnFile = new JMenu("File");
@@ -312,54 +334,70 @@ public class KMLFormatGUI implements TreeSelectionListener {
 		 * 
 		 * OPEN FILE DIALOG
 		 */
-		JMenuItem mntmOpenKml = new JMenuItem("Open File");
+		mntmOpenKml = new JMenuItem("Open File");
 		mntmOpenKml.addMouseListener(new MouseAdapter() {
 			@Override
 			public void mouseReleased(MouseEvent arg0) {
-				int returnValue = fc.showOpenDialog(null);
+				if (mntmOpenKml.isEnabled()) {
+					int returnValue = fc.showOpenDialog(null);
 
-				if (returnValue == JFileChooser.APPROVE_OPTION) {
-					progressBar.setVisible(true);
-					class MyWorker1 extends SwingWorker<String, Void> {
-						protected String doInBackground() {
-							// List<Feature> placemarks = parse.getFeatures();
-							// parse.cleanUp((Collection)placemarks);
-							// parse.cleanUp(placemarks);\
-							File selectedFile = fc.getSelectedFile();
+					if (returnValue == JFileChooser.APPROVE_OPTION) {
+						mntmOpenKml.setEnabled(false);
+						mnExportAs.setEnabled(false);
 
-							try {
-								InputStream is = new FileInputStream(
-										selectedFile);
+						progressBar.setVisible(true);
+						class MyWorker1 extends SwingWorker<String, Void> {
+							protected String doInBackground() {
+								// List<Feature> placemarks =
+								// parse.getFeatures();
+								// parse.cleanUp((Collection)placemarks);
+								// parse.cleanUp(placemarks);\
+								File selectedFile = fc.getSelectedFile();
 
-								parse = new Parse(is);
-							} catch (IOException e) {
+								try {
+									InputStream is = new FileInputStream(
+											selectedFile);
+
+									if (selectedFile.getName().contains("kmz")) {
+										parse = new Parse(is, true);
+										parse = null;
+									} else {
+										parse = new Parse(is, false);
+										openFile();
+									}
+								} catch (IOException e) {
+
+								}
+								hasFile = true;
+								
+
+								return "Done";
 
 							}
-							hasFile = true;
-							openFile();
 
-							return "Done";
+							protected void done() {
+								mnExportAs.setEnabled(true);
+								mntmOpenKml.setEnabled(true);
 
+								progressBar.setVisible(false);
+
+							}
 						}
 
-						protected void done() {
-							progressBar.setVisible(false);
+						new MyWorker1().execute();
 
-						}
+						// System.out.println(selectedFile.toString());
+					} else {
+
 					}
-
-					new MyWorker1().execute();
-
-					// System.out.println(selectedFile.toString());
-				} else {
-
 				}
 			}
 		});
 		mnFile.add(mntmOpenKml);
 
-		JMenu mnExportAs = new JMenu("Export as...");
+		mnExportAs = new JMenu("Export as...");
 		mnFile.add(mnExportAs);
+		mnExportAs.setEnabled(false);
 
 		JMenuItem mntmKmlall = new JMenuItem("KML");
 		mntmKmlall.addMouseListener(new MouseAdapter() {
@@ -368,20 +406,19 @@ public class KMLFormatGUI implements TreeSelectionListener {
 				int returnVal = fc.showSaveDialog(null);
 
 				if (returnVal == JFileChooser.APPROVE_OPTION) {
+					mntmOpenKml.setEnabled(false);
+					mnExportAs.setEnabled(false);
+
 					final File file = fc.getSelectedFile();
 
 					List<Feature> placemarks = parse.getFeatures();
 					Object[] placm = placemarks.toArray();
-					// parse.cleanUp((Collection)placemarks);
-					// parse.cleanUp(placemarks);
 
-					// System.out.println(placemarks.size());
-					if(count == 1)
-					{
+					if (count == 1) {
 						parse.createSepFolders();
 						count = 0;
 					}
-					
+
 					for (String str : ages) {
 
 						Folder folder = parse.addAgeFolders(str);
@@ -389,8 +426,7 @@ public class KMLFormatGUI implements TreeSelectionListener {
 						for (Object obj : placm) {
 							try {
 								Placemark p = (Placemark) obj;
-								if (Pmark.getAgeGlobal(p.getName())
-										.equals(str)) {
+								if (Pmark.getAgeGlobal(p.getName()).equals(str)) {
 									parse.addToFolderNoDelete(folder, p);
 
 								}
@@ -399,7 +435,7 @@ public class KMLFormatGUI implements TreeSelectionListener {
 						}
 
 					}
-					
+
 					for (String str : lithicGroups) {
 
 						Folder folder = parse.addLithicGroupFolders(str);
@@ -422,10 +458,87 @@ public class KMLFormatGUI implements TreeSelectionListener {
 					progressBar.setIndeterminate(true);
 					class MyWorker extends SwingWorker<String, Void> {
 						protected String doInBackground() {
-							// List<Feature> placemarks = parse.getFeatures();
-							// parse.cleanUp((Collection)placemarks);
-							// parse.cleanUp(placemarks);
-							parse.reWrite(file.toString());
+
+							parse.reWriteKML(file.toString());
+
+							return "Done";
+
+						}
+
+						protected void done() {
+							mnExportAs.setEnabled(true);
+							mntmOpenKml.setEnabled(true);
+							progressBar.setVisible(false);
+
+						}
+					}
+
+					new MyWorker().execute();
+
+				}
+
+			}
+		});
+		mnExportAs.add(mntmKmlall);
+
+		JMenuItem mntmKmz = new JMenuItem("KMZ");
+		mntmKmz.addMouseListener(new MouseAdapter() {
+			@Override
+			public void mouseReleased(MouseEvent arg0) {
+				int returnVal = fc.showSaveDialog(null);
+
+				if (returnVal == JFileChooser.APPROVE_OPTION) {
+					final File file = fc.getSelectedFile();
+
+					List<Feature> placemarks = parse.getFeatures();
+					Object[] placm = placemarks.toArray();
+
+					if (count == 1) {
+						parse.createSepFolders();
+						count = 0;
+					}
+
+					for (String str : ages) {
+
+						Folder folder = parse.addAgeFolders(str);
+
+						for (Object obj : placm) {
+							try {
+								Placemark p = (Placemark) obj;
+								if (Pmark.getAgeGlobal(p.getName()).equals(str)) {
+									parse.addToFolderNoDelete(folder, p);
+
+								}
+							} catch (ClassCastException e2) {
+							}
+						}
+
+					}
+
+					for (String str : lithicGroups) {
+
+						Folder folder = parse.addLithicGroupFolders(str);
+
+						for (Object obj : placm) {
+							try {
+								Placemark p = (Placemark) obj;
+								if (Pmark.getLithicGroupGlobal(p.getStyleUrl())
+										.equals(str)) {
+									parse.addToFolder(folder, p);
+
+								}
+							} catch (ClassCastException e) {
+							}
+						}
+
+					}
+
+					progressBar.setVisible(true);
+					progressBar.setIndeterminate(true);
+					class MyWorker extends SwingWorker<String, Void> {
+						protected String doInBackground() {
+
+							parse.reWriteKMZ(file.toString());
 
 							return "Done";
 
@@ -440,12 +553,9 @@ public class KMLFormatGUI implements TreeSelectionListener {
 					new MyWorker().execute();
 
 				}
-				
+
 			}
 		});
-		mnExportAs.add(mntmKmlall);
-		
-		JMenuItem mntmKmz = new JMenuItem("KMZ");
 		mnExportAs.add(mntmKmz);
 
 		JMenu mnHelp = new JMenu("Help");
@@ -455,6 +565,15 @@ public class KMLFormatGUI implements TreeSelectionListener {
 		mnHelp.add(mntmHelpContent);
 
 		JMenuItem mntmAbout = new JMenuItem("About");
+		mntmAbout.addMouseListener(new MouseAdapter() {
+			@Override
+			public void mouseReleased(MouseEvent arg0) {
+
+				JOptionPane.showMessageDialog(frmKmlFormatter,
+						"USGS KML Formatter. Developed by Jack Jamieson 2015.");
+
+			}
+		});
 		mnHelp.add(mntmAbout);
 
 		progressBar = new JProgressBar();
@@ -474,8 +593,7 @@ public class KMLFormatGUI implements TreeSelectionListener {
 		contentPane.setContentType("text/html");
 		HTMLDocument doc = (HTMLDocument) contentPane.getDocument();
 		HTMLEditorKit editorKit = (HTMLEditorKit) contentPane.getEditorKit();
-		String text = "<h3>Description:</h3>" + p.getDescription()
-				+ "<h3>Lithic Group:</h3>" + p.getLithicGroup();
+		String text = "<h3>Description:</h3>" + p.getDescription();
 		try {
 			editorKit.insertHTML(doc, doc.getLength(), text, 0, 0, null);
 		} catch (BadLocationException | IOException e) {
@@ -518,20 +636,38 @@ public class KMLFormatGUI implements TreeSelectionListener {
 				displayContents(pmark);
 			} catch (ClassCastException cce) {
 
-				if(nodeInfo instanceof String){
+				if (nodeInfo instanceof String) {
+					Pmark p = findFeatureFromString((String) nodeInfo);
 					contentPane.setText("");
+
+					displayContents(p);
 				}
-				
+
 				else {
-				Dir dir = (Dir) nodeInfo;
-				contentPane.setText("");
-				displayContents(dir);
+					Dir dir = (Dir) nodeInfo;
+					contentPane.setText("");
+					displayContents(dir);
 				}
 			}
 
 		}
 
 	}
-	
-	
+
+	public Pmark findFeatureFromString(String placemarkName) {
+		List<Feature> placemarks = parse.getFeatures();
+
+		for (Object obj : placemarks) {
+			Placemark p = (Placemark) obj;
+			Pmark pmark = new Pmark(p.getName(), p.getDescription(),
+					p.getStyleUrl());
+			if (pmark.getName().equals(placemarkName)) {
+				return pmark;
+			}
+
+		}
+
+		return null;
+	}
+
 }
