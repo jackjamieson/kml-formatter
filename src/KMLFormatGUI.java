@@ -6,6 +6,8 @@ import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.net.URI;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Set;
 import java.util.TreeSet;
@@ -47,6 +49,7 @@ public class KMLFormatGUI implements TreeSelectionListener {
 
 	private Set<String> lithicGroups;
 	private Set<String> ages;
+	private Set<String> agesWithLithicGroups;
 
 	private JProgressBar progressBar;
 
@@ -148,21 +151,18 @@ public class KMLFormatGUI implements TreeSelectionListener {
 	}
 
 	// Prepare for agnostic use?
-	private void createNodesAgnostic(DefaultMutableTreeNode top) {
-		DefaultMutableTreeNode children = null;
-		List<Feature> features = parse.getFeatures();
-
-		for (Feature feat : features) {
-			children = new DefaultMutableTreeNode(feat.getName());
-
-			for (Object feat2 : feat.getFeatureSimpleExtension()) {
-				DefaultMutableTreeNode down = new DefaultMutableTreeNode(
-						((Feature) feat2).getName());
-				children.add(down);
-			}
-			top.add(children);
-		}
-	}
+	/*
+	 * private void createNodesAgnostic(DefaultMutableTreeNode top) {
+	 * DefaultMutableTreeNode children = null; List<Feature> features =
+	 * parse.getFeatures();
+	 * 
+	 * for (Feature feat : features) { children = new
+	 * DefaultMutableTreeNode(feat.getName());
+	 * 
+	 * for (Object feat2 : feat.getFeatureSimpleExtension()) {
+	 * DefaultMutableTreeNode down = new DefaultMutableTreeNode( ((Feature)
+	 * feat2).getName()); children.add(down); } top.add(children); } }
+	 */
 
 	// Create the nodes for the USGS KML parser
 	private void createNodes(DefaultMutableTreeNode top) {
@@ -170,6 +170,7 @@ public class KMLFormatGUI implements TreeSelectionListener {
 			DefaultMutableTreeNode list = null;
 			DefaultMutableTreeNode groups = null;
 			DefaultMutableTreeNode age = null;
+			DefaultMutableTreeNode ageWithLithic = null;
 
 			DefaultMutableTreeNode child = null;
 
@@ -182,10 +183,15 @@ public class KMLFormatGUI implements TreeSelectionListener {
 			age = new DefaultMutableTreeNode("Age");
 			top.add(age);
 
+			ageWithLithic = new DefaultMutableTreeNode(
+					"Age with Lithic Subgroups");
+			top.add(ageWithLithic);
+
 			List<Feature> placemarks = parse.getFeatures();
 			lithicGroups = new TreeSet<String>();
 			ages = new TreeSet<String>();
 
+			// Add the already existing features into a folder
 			for (Object obj : placemarks) {
 
 				try {
@@ -212,6 +218,7 @@ public class KMLFormatGUI implements TreeSelectionListener {
 				groups.add(child);
 			}
 
+			// Add lithic group items
 			for (Object obj : placemarks) {
 				Placemark p = (Placemark) obj;
 				String group = Pmark.getLithicGroupGlobal(p.getStyleUrl());
@@ -232,14 +239,26 @@ public class KMLFormatGUI implements TreeSelectionListener {
 
 			}
 
+			// Create directiories for the ages
 			for (String str : ages) {
 				Dir d = new Dir(str);
 
 				child = new DefaultMutableTreeNode(d);
 				age.add(child);
+				// ageWithLithic.add(child);
 
 			}
 
+			for (String str : ages) {
+				Dir d = new Dir(str);
+
+				child = new DefaultMutableTreeNode(d);
+				// age.add(child);
+				ageWithLithic.add(child);
+
+			}
+
+			// Add the ages to the folder
 			for (Object obj : placemarks) {
 				Placemark p = (Placemark) obj;
 				String ageStr = Pmark.getAgeGlobal(p.getName());
@@ -259,6 +278,86 @@ public class KMLFormatGUI implements TreeSelectionListener {
 				}
 
 			}
+
+			// Add the ages to the folder w/ lithic groups
+			for (Object obj : placemarks) {
+				Placemark p = (Placemark) obj;
+				String ageStr = Pmark.getAgeGlobal(p.getName());
+				DefaultMutableTreeNode node = null;
+				DefaultMutableTreeNode subChild = null;
+				DefaultMutableTreeNode subSubChild = null;
+
+				int index = 0;
+				try {
+					while (ageWithLithic.children().hasMoreElements()) {
+						
+						List<DefaultMutableTreeNode> seenNodes = new ArrayList<DefaultMutableTreeNode>();
+						
+						if (ageWithLithic.getChildAt(index).toString()
+								.equals(ageStr)) {
+							node = (DefaultMutableTreeNode) ageWithLithic
+									.getChildAt(index);
+							
+							// node.add(new
+							// DefaultMutableTreeNode(p.getName()));
+
+							// Add the lithic groups to the top level folder
+							for (String str : lithicGroups) {
+
+								Dir d = new Dir(str);
+
+								subChild = new DefaultMutableTreeNode(d);
+								if (Pmark.getLithicGroupGlobal(p.getStyleUrl())
+										.equals(str)) {
+									seenNodes.add(subChild);
+									
+									node.add(subChild);
+									Dir d2 = (Dir) subChild.getUserObject();
+									// if(d2.toString().equals)
+									// node = (DefaultMutableTreeNode)
+									// ageWithLithic
+									// .getChildAt(index);
+
+									subChild.add(new DefaultMutableTreeNode(p
+											.getName()));
+
+								}
+
+							}
+
+					
+						}
+
+						index++;
+					}
+				}
+
+				/*
+				 * while(ageWithLithic.children().hasMoreElements()){ subChild =
+				 * (DefaultMutableTreeNode)
+				 * ageWithLithic.children().nextElement(); int subIndex = 0;
+				 * 
+				 * while(subChild.children().hasMoreElements()) { subSubChild =
+				 * (DefaultMutableTreeNode) subChild.getChildAt(subIndex);
+				 * Object subSubObj = subSubChild.getUserObject();//subSubChild
+				 * = (Placemark) subSubChild; //subSubObj = (String) subSubObj;
+				 * 
+				 * agesWithLithicGroups.add((String)subSubObj);
+				 * System.out.println((String)subSubObj); subIndex++;
+				 * 
+				 * }
+				 * 
+				 * 
+				 * }
+				 */
+				// }
+
+				catch (IndexOutOfBoundsException excp) {
+				}
+
+			}
+
+			// Try and catch errors when it is not a proper USGS file
 		} catch (Exception e) {
 			e.printStackTrace();
 			JOptionPane.showMessageDialog(frmKmlFormatter,
@@ -348,10 +447,7 @@ public class KMLFormatGUI implements TreeSelectionListener {
 						progressBar.setVisible(true);
 						class MyWorker1 extends SwingWorker<String, Void> {
 							protected String doInBackground() {
-								// List<Feature> placemarks =
-								// parse.getFeatures();
-								// parse.cleanUp((Collection)placemarks);
-								// parse.cleanUp(placemarks);\
+					
 								File selectedFile = fc.getSelectedFile();
 
 								try {
@@ -369,7 +465,6 @@ public class KMLFormatGUI implements TreeSelectionListener {
 
 								}
 								hasFile = true;
-								
 
 								return "Done";
 
@@ -386,7 +481,6 @@ public class KMLFormatGUI implements TreeSelectionListener {
 
 						new MyWorker1().execute();
 
-						// System.out.println(selectedFile.toString());
 					} else {
 
 					}
@@ -454,6 +548,46 @@ public class KMLFormatGUI implements TreeSelectionListener {
 
 					}
 
+
+					for (String str : ages) {
+
+						Folder folder = parse.addAgeLithicFolders(str);
+						List<Folder> folders = new ArrayList<Folder>();
+
+						for (Object obj : placm) {
+							try {
+								Placemark p = (Placemark) obj;
+								if (Pmark.getAgeGlobal(p.getName()).equals(str)) {
+									Pmark temp = new Pmark(p.getName(), p
+											.getDescription(), p.getStyleUrl());
+
+				
+									//If there is already a folder with the same name, put the feature in there.
+									boolean foundIt = false;
+									for (Folder f : folders) {
+										if (f.getName().equals(
+												temp.getLithicGroup())) {
+											parse.addToFolderNoDelete(f, p);
+											foundIt = true;
+										}
+									}
+									if (folders.size() == 0 || foundIt == false) {
+										Folder folder2 = folder
+												.createAndAddFolder();
+										folder2.setName(temp.getLithicGroup());
+										folders.add(folder2);
+										// parse.addToFolder(folder2,
+										// folder);
+										parse.addToFolderNoDelete(folder2, p);
+									}
+
+								}
+
+							} catch (ClassCastException e2) {
+							}
+						}
+
+					}
 					progressBar.setVisible(true);
 					progressBar.setIndeterminate(true);
 					class MyWorker extends SwingWorker<String, Void> {
@@ -561,6 +695,24 @@ public class KMLFormatGUI implements TreeSelectionListener {
 		JMenu mnHelp = new JMenu("Help");
 		menuBar_1.add(mnHelp);
 
+		JMenuItem mntmUsgsStateKmls = new JMenuItem("USGS State KMLs");
+		mntmUsgsStateKmls.addMouseListener(new MouseAdapter() {
+			@Override
+			public void mouseReleased(MouseEvent arg0) {
+
+				try {
+					java.awt.Desktop
+							.getDesktop()
+							.browse(URI
+									.create("http://mrdata.usgs.gov/geology/state/"));
+				} catch (IOException e) {
+					// TODO Auto-generated catch block
+					e.printStackTrace();
+				}
+			}
+		});
+		mnHelp.add(mntmUsgsStateKmls);
+
 		JMenuItem mntmHelpContent = new JMenuItem("Help Content");
 		mnHelp.add(mntmHelpContent);
 
@@ -593,7 +745,7 @@ public class KMLFormatGUI implements TreeSelectionListener {
 		contentPane.setContentType("text/html");
 		HTMLDocument doc = (HTMLDocument) contentPane.getDocument();
 		HTMLEditorKit editorKit = (HTMLEditorKit) contentPane.getEditorKit();
-		String text = "<h3>Description:</h3>" + p.getDescription();
+		String text = "<h3>Description:</h3>" + p.getDescription() + "\n";
 		try {
 			editorKit.insertHTML(doc, doc.getLength(), text, 0, 0, null);
 		} catch (BadLocationException | IOException e) {

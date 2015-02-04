@@ -23,6 +23,7 @@ public class Parse {
 	private Folder marks;
 	private Folder groups;
 	private Folder ages;
+	private Folder agesWithLithic;
 
 	public Parse() {
 
@@ -110,6 +111,9 @@ public class Parse {
 
 		ages = document.createAndAddFolder();
 		ages.setName("Age");
+		
+		agesWithLithic = document.createAndAddFolder();
+		agesWithLithic.setName("Ages with Lithic Subgroups");
 
 	}
 
@@ -137,12 +141,26 @@ public class Parse {
 
 		return folder;
 	}
+	
+	public Folder addAgeLithicFolders(String folderName) {
+
+		Folder folder = agesWithLithic.createAndAddFolder();
+		folder.setName(folderName);
+
+		return folder;
+	}
 
 	public void addToFolder(Folder folder, Placemark placemark) {
 		folder.getFeature().add(placemark);
 		marks.getFeature().add(placemark);
 		document.getFeature().remove(placemark);
 
+	}
+	
+	public void addToFolder(Folder folder, Folder folder2) {
+		folder.getFeature().add(folder2);
+		//marks.getFeature().add(placemark);
+		//document.getFeature().remove(placemark);
 	}
 
 	public void addToFolderNoDelete(Folder folder, Placemark placemark) {
