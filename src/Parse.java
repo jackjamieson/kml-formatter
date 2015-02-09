@@ -23,6 +23,7 @@ public class Parse {
 
 	private Kml kml;
 	private Document document;
+	private Document origDoc;
 	private Folder marks;
 	private Folder groups;
 	private Folder ages;
@@ -53,6 +54,7 @@ public class Parse {
 			if (!isKMZ) {
 				kml = Kml.unmarshal(bais);
 				document = (Document) kml.getFeature();
+				origDoc = (Document) kml.getFeature();
 			}
 			else {
 				JOptionPane.showMessageDialog(null, "KMZ files are not supported.", "Error", 2);
@@ -104,9 +106,11 @@ public class Parse {
 	}
 
 	public void deleteSepFolders() {
-		document.getFeature().remove(marks);
+		//document.getFeature().remove(marks);
+		
 		document.getFeature().remove(groups);
 		document.getFeature().remove(ages);
+		document.getFeature().remove(agesWithLithic);
 
 	}
 
@@ -157,6 +161,7 @@ public class Parse {
 
 		try {
 			kml.marshal(new File(fileName));
+			//toOrig();
 		} catch (FileNotFoundException e) {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
@@ -174,6 +179,10 @@ public class Parse {
 			e.printStackTrace();
 		}
 
+	}
+	
+	public void toOrig(){
+		document = origDoc;
 	}
 
 }
