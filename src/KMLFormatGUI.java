@@ -37,6 +37,8 @@ import de.micromata.opengis.kml.v_2_2_0.Feature;
 import de.micromata.opengis.kml.v_2_2_0.Folder;
 import de.micromata.opengis.kml.v_2_2_0.Placemark;
 
+//Jack Jamieson 2015
+//This class creates and maintains the GUI.
 public class KMLFormatGUI implements TreeSelectionListener {
 
 	// private JList list;
@@ -63,6 +65,7 @@ public class KMLFormatGUI implements TreeSelectionListener {
 	private JMenuBar menuBar_1;
 	private JMenuItem mntmOpenKml;
 	private JMenu mnExportAs;
+	private JMenu mnExportAsKmz;
 
 	private int count = 0;
 
@@ -443,6 +446,7 @@ public class KMLFormatGUI implements TreeSelectionListener {
 					if (returnValue == JFileChooser.APPROVE_OPTION) {
 						mntmOpenKml.setEnabled(false);
 						mnExportAs.setEnabled(false);
+						mnExportAsKmz.setEnabled(false);
 
 						progressBar.setVisible(true);
 						class MyWorker1 extends SwingWorker<String, Void> {
@@ -472,6 +476,7 @@ public class KMLFormatGUI implements TreeSelectionListener {
 
 							protected void done() {
 								mnExportAs.setEnabled(true);
+								mnExportAsKmz.setEnabled(true);
 								mntmOpenKml.setEnabled(true);
 
 								progressBar.setVisible(false);
@@ -489,11 +494,11 @@ public class KMLFormatGUI implements TreeSelectionListener {
 		});
 		mnFile.add(mntmOpenKml);
 
-		mnExportAs = new JMenu("Export as...");
+		mnExportAs = new JMenu("Export as KML...");
 		mnFile.add(mnExportAs);
 		mnExportAs.setEnabled(false);
 
-		JMenuItem mntmKmlall = new JMenuItem("KML");
+		JMenuItem mntmKmlall = new JMenuItem("All");
 		mntmKmlall.addMouseListener(new MouseAdapter() {
 			@Override
 			public void mouseReleased(MouseEvent arg0) {
@@ -505,192 +510,54 @@ public class KMLFormatGUI implements TreeSelectionListener {
 
 					final File file = fc.getSelectedFile();
 
-					List<Feature> placemarks = parse.getFeatures();
-					Object[] placm = placemarks.toArray();
-
-					if (count == 1) {
-						parse.createSepFolders();
-						count = 0;
-					}
-
-					for (String str : ages) {
-
-						Folder folder = parse.addAgeFolders(str);
-
-						for (Object obj : placm) {
-							try {
-								Placemark p = (Placemark) obj;
-								if (Pmark.getAgeGlobal(p.getName()).equals(str)) {
-									parse.addToFolderNoDelete(folder, p);
-
-								}
-							} catch (ClassCastException e2) {
-							}
-						}
-
-					}
-
-					for (String str : lithicGroups) {
-
-						Folder folder = parse.addLithicGroupFolders(str);
-
-						for (Object obj : placm) {
-							try {
-								Placemark p = (Placemark) obj;
-								if (Pmark.getLithicGroupGlobal(p.getStyleUrl())
-										.equals(str)) {
-									parse.addToFolder(folder, p);
-
-								}
-							} catch (ClassCastException e) {
-							}
-						}
-
-					}
-
-
-					for (String str : ages) {
-
-						Folder folder = parse.addAgeLithicFolders(str);
-						List<Folder> folders = new ArrayList<Folder>();
-
-						for (Object obj : placm) {
-							try {
-								Placemark p = (Placemark) obj;
-								if (Pmark.getAgeGlobal(p.getName()).equals(str)) {
-									Pmark temp = new Pmark(p.getName(), p
-											.getDescription(), p.getStyleUrl());
-
-				
-									//If there is already a folder with the same name, put the feature in there.
-									boolean foundIt = false;
-									for (Folder f : folders) {
-										if (f.getName().equals(
-												temp.getLithicGroup())) {
-											parse.addToFolderNoDelete(f, p);
-											foundIt = true;
-										}
-									}
-									if (folders.size() == 0 || foundIt == false) {
-										Folder folder2 = folder
-												.createAndAddFolder();
-										folder2.setName(temp.getLithicGroup());
-										folders.add(folder2);
-										// parse.addToFolder(folder2,
-										// folder);
-										parse.addToFolderNoDelete(folder2, p);
-									}
-
-								}
-
-							} catch (ClassCastException e2) {
-							}
-						}
-
-					}
-					progressBar.setVisible(true);
-					progressBar.setIndeterminate(true);
-					class MyWorker extends SwingWorker<String, Void> {
-						protected String doInBackground() {
-
-							parse.reWriteKML(file.toString());
-
-							return "Done";
-
-						}
-
-						protected void done() {
-							mnExportAs.setEnabled(true);
-							mntmOpenKml.setEnabled(true);
-							progressBar.setVisible(false);
-
-						}
-					}
-
-					new MyWorker().execute();
+					reWriteAll(true, file);
 
 				}
 
 			}
 		});
+		
+		JMenuItem mntmLithicGroup_1 = new JMenuItem("Lithic Group");
+		mnExportAs.add(mntmLithicGroup_1);
+		
+		JMenuItem mntmAge_1 = new JMenuItem("Age");
+		mnExportAs.add(mntmAge_1);
+		
+		JMenuItem mntmAgeWithLithic_1 = new JMenuItem("Age with Lithic Subgroup");
+		mnExportAs.add(mntmAgeWithLithic_1);
 		mnExportAs.add(mntmKmlall);
+				
+				mnExportAsKmz = new JMenu("Export as KMZ...");
+				mnExportAsKmz.setEnabled(false);
 
-		JMenuItem mntmKmz = new JMenuItem("KMZ");
-		mntmKmz.addMouseListener(new MouseAdapter() {
-			@Override
-			public void mouseReleased(MouseEvent arg0) {
-				int returnVal = fc.showSaveDialog(null);
+				mnFile.add(mnExportAsKmz);
+				
+				JMenuItem mntmLithicGroup = new JMenuItem("Lithic Group");
+				mnExportAsKmz.add(mntmLithicGroup);
+				
+				JMenuItem mntmAge = new JMenuItem("Age");
+				mnExportAsKmz.add(mntmAge);
+				
+				JMenuItem mntmAgeWithLithic = new JMenuItem("Age with Lithic Subgroup");
+				mnExportAsKmz.add(mntmAgeWithLithic);
+				
+						JMenuItem mntmKmz = new JMenuItem("All");
+						mnExportAsKmz.add(mntmKmz);
+						mntmKmz.addMouseListener(new MouseAdapter() {
+							@Override
+							public void mouseReleased(MouseEvent arg0) {
+								int returnVal = fc.showSaveDialog(null);
 
-				if (returnVal == JFileChooser.APPROVE_OPTION) {
-					final File file = fc.getSelectedFile();
+								if (returnVal == JFileChooser.APPROVE_OPTION) {
+									final File file = fc.getSelectedFile();
 
-					List<Feature> placemarks = parse.getFeatures();
-					Object[] placm = placemarks.toArray();
+									reWriteAll(false, file);
 
-					if (count == 1) {
-						parse.createSepFolders();
-						count = 0;
-					}
-
-					for (String str : ages) {
-
-						Folder folder = parse.addAgeFolders(str);
-
-						for (Object obj : placm) {
-							try {
-								Placemark p = (Placemark) obj;
-								if (Pmark.getAgeGlobal(p.getName()).equals(str)) {
-									parse.addToFolderNoDelete(folder, p);
-
-								}
-							} catch (ClassCastException e2) {
-							}
-						}
-
-					}
-
-					for (String str : lithicGroups) {
-
-						Folder folder = parse.addLithicGroupFolders(str);
-
-						for (Object obj : placm) {
-							try {
-								Placemark p = (Placemark) obj;
-								if (Pmark.getLithicGroupGlobal(p.getStyleUrl())
-										.equals(str)) {
-									parse.addToFolder(folder, p);
 
 								}
-							} catch (ClassCastException e) {
+
 							}
-						}
-
-					}
-
-					progressBar.setVisible(true);
-					progressBar.setIndeterminate(true);
-					class MyWorker extends SwingWorker<String, Void> {
-						protected String doInBackground() {
-
-							parse.reWriteKMZ(file.toString());
-
-							return "Done";
-
-						}
-
-						protected void done() {
-							progressBar.setVisible(false);
-
-						}
-					}
-
-					new MyWorker().execute();
-
-				}
-
-			}
-		});
-		mnExportAs.add(mntmKmz);
+						});
 
 		JMenu mnHelp = new JMenu("Help");
 		menuBar_1.add(mnHelp);
@@ -820,6 +687,116 @@ public class KMLFormatGUI implements TreeSelectionListener {
 		}
 
 		return null;
+	}
+	
+	public void reWriteAll(final boolean isKML, final File file){
+		
+		List<Feature> placemarks = parse.getFeatures();
+		Object[] placm = placemarks.toArray();
+
+		if (count == 1) {
+			parse.createSepFolders();
+			count = 0;
+		}
+
+		for (String str : ages) {
+
+			Folder folder = parse.addAgeFolders(str);
+
+			for (Object obj : placm) {
+				try {
+					Placemark p = (Placemark) obj;
+					if (Pmark.getAgeGlobal(p.getName()).equals(str)) {
+						parse.addToFolderNoDelete(folder, p);
+
+					}
+				} catch (ClassCastException e2) {
+				}
+			}
+
+		}
+
+		for (String str : lithicGroups) {
+
+			Folder folder = parse.addLithicGroupFolders(str);
+
+			for (Object obj : placm) {
+				try {
+					Placemark p = (Placemark) obj;
+					if (Pmark.getLithicGroupGlobal(p.getStyleUrl())
+							.equals(str)) {
+						parse.addToFolder(folder, p);
+
+					}
+				} catch (ClassCastException e) {
+				}
+			}
+
+		}
+
+
+		for (String str : ages) {
+
+			Folder folder = parse.addAgeLithicFolders(str);
+			List<Folder> folders = new ArrayList<Folder>();
+
+			for (Object obj : placm) {
+				try {
+					Placemark p = (Placemark) obj;
+					if (Pmark.getAgeGlobal(p.getName()).equals(str)) {
+						Pmark temp = new Pmark(p.getName(), p
+								.getDescription(), p.getStyleUrl());
+
+	
+						//If there is already a folder with the same name, put the feature in there.
+						boolean foundIt = false;
+						for (Folder f : folders) {
+							if (f.getName().equals(
+									temp.getLithicGroup())) {
+								parse.addToFolderNoDelete(f, p);
+								foundIt = true;
+							}
+						}
+						if (folders.size() == 0 || foundIt == false) {
+							Folder folder2 = folder
+									.createAndAddFolder();
+							folder2.setName(temp.getLithicGroup());
+							folders.add(folder2);
+							// parse.addToFolder(folder2,
+							// folder);
+							parse.addToFolderNoDelete(folder2, p);
+						}
+
+					}
+
+				} catch (ClassCastException e2) {
+				}
+			}
+
+		}
+		progressBar.setVisible(true);
+		progressBar.setIndeterminate(true);
+		class MyWorker extends SwingWorker<String, Void> {
+			protected String doInBackground() {
+
+				if(isKML == true)
+					parse.reWriteKML(file.toString());
+				else parse.reWriteKMZ(file.toString());
+
+
+				return "Done";
+
+			}
+
+			protected void done() {
+				mnExportAs.setEnabled(true);
+				mntmOpenKml.setEnabled(true);
+				progressBar.setVisible(false);
+
+			}
+		}
+
+		new MyWorker().execute();
 	}
 
 }

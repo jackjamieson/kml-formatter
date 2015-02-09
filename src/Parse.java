@@ -1,7 +1,6 @@
 import java.io.ByteArrayInputStream;
 import java.io.File;
 import java.io.FileNotFoundException;
-import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.List;
@@ -16,6 +15,10 @@ import de.micromata.opengis.kml.v_2_2_0.Folder;
 import de.micromata.opengis.kml.v_2_2_0.Kml;
 import de.micromata.opengis.kml.v_2_2_0.Placemark;
 
+
+//Jack Jamieson 2015
+//This class handles the parsing of KML files using the JAK library.  Also requires Apache commons io.
+//This does not have anything to do with the GUI representation of the file breakdown.
 public class Parse {
 
 	private Kml kml;
@@ -29,13 +32,10 @@ public class Parse {
 
 	}
 
+	//Read in the KML
 	public Parse(InputStream is, boolean isKMZ) {
 
-		// String kml = "";
-		// try {
-		// Scanner scan = new Scanner(is);
-		// String first = scan.nextLine();
-		// if(first.contains("xmlns=\"http://earth.google.com/kml/2.2\"")){
+
 		String str;
 		try {
 			str = IOUtils.toString(is);
@@ -47,19 +47,14 @@ public class Parse {
 							"xmlns=\"http://www.opengis.net/kml/2.2\" xmlns:gx=\"http://www.google.com/kml/ext/2.2\"");
 			ByteArrayInputStream bais = new ByteArrayInputStream(
 					str.getBytes("UTF-8"));
+			//The JAK library cannot read the old GE KML header so we have to replace it before reading.
 
+			//KMZ files are a whole nother mess, just don't read them.
 			if (!isKMZ) {
 				kml = Kml.unmarshal(bais);
 				document = (Document) kml.getFeature();
 			}
 			else {
-				/*
-				File kmz = null;
-				FileOutputStream fos = new FileOutputStream(kmz);
-				 IOUtils.copy(bais, fos);
-
-				 kml = Kml.unmarshalFromKmz(kmz);
-				 */
 				JOptionPane.showMessageDialog(null, "KMZ files are not supported.", "Error", 2);
 			}
 
@@ -68,17 +63,7 @@ public class Parse {
 			e.printStackTrace();
 		}
 
-		// }
-		// else{
-		//
-		// kml = Kml.unmarshal(is);
-		// document = (Document) kml.getFeature();
-		// }
-
-		// } catch (FileNotFoundException e) {
-
-		// e.printStackTrace();
-		// }
+	
 
 	}
 
@@ -101,6 +86,7 @@ public class Parse {
 
 	}
 
+	//Create new folders in the in-memory KML
 	public void createSepFolders() {
 
 		marks = document.createAndAddFolder();
@@ -130,7 +116,7 @@ public class Parse {
 		folder.setName(folderName);
 
 		return folder;
-		// folder.
+		
 
 	}
 
@@ -159,25 +145,11 @@ public class Parse {
 	
 	public void addToFolder(Folder folder, Folder folder2) {
 		folder.getFeature().add(folder2);
-		//marks.getFeature().add(placemark);
-		//document.getFeature().remove(placemark);
+		
 	}
 
 	public void addToFolderNoDelete(Folder folder, Placemark placemark) {
 		folder.getFeature().add(placemark);
-
-	}
-
-	public void cleanUp(List<Feature> features) {
-
-		Object[] ft = features.toArray();
-		for (Object feature : ft) {
-			if ((feature instanceof Folder)) {
-				// ((Folder)feature).getFeature().
-
-			}
-
-		}
 
 	}
 
