@@ -23,12 +23,17 @@ public class Parse {
 
 	private Kml kml;
 	private Document document;
-	private Document origDoc;
+	private Document ageDoc;
+	private Document lithDoc;
+	private Document ageWLithDoc;
+
 	private Folder marks;
 	private Folder groups;
 	private Folder ages;
 	private Folder agesWithLithic;
 
+
+	
 	public Parse() {
 
 	}
@@ -54,7 +59,10 @@ public class Parse {
 			if (!isKMZ) {
 				kml = Kml.unmarshal(bais);
 				document = (Document) kml.getFeature();
-				origDoc = (Document) kml.getFeature();
+				ageDoc = (Document) kml.getFeature();
+				lithDoc = (Document) kml.getFeature();
+				ageWLithDoc = (Document) kml.getFeature();
+
 			}
 			else {
 				JOptionPane.showMessageDialog(null, "KMZ files are not supported.", "Error", 2);
@@ -104,6 +112,8 @@ public class Parse {
 		agesWithLithic.setName("Ages with Lithic Subgroups");
 
 	}
+	
+	
 
 	public void deleteSepFolders() {
 		//document.getFeature().remove(marks);
@@ -143,9 +153,12 @@ public class Parse {
 	public void addToFolder(Folder folder, Placemark placemark) {
 		folder.getFeature().add(placemark);
 		marks.getFeature().add(placemark);
-		document.getFeature().remove(placemark);
+		//document.getFeature().remove(placemark);//TODO:This causes anything after the first export to not contain subfolders.
 
 	}
+	
+
+
 	
 	public void addToFolder(Folder folder, Folder folder2) {
 		folder.getFeature().add(folder2);
@@ -181,8 +194,6 @@ public class Parse {
 
 	}
 	
-	public void toOrig(){
-		document = origDoc;
-	}
+
 
 }
