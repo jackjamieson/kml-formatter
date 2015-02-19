@@ -59,6 +59,7 @@ public class KMLFormatGUI implements TreeSelectionListener {
 
 	private Boolean hasFile = false;
 	private Boolean createdGUI = false;
+	private Boolean hasWrittenOnce = false;
 
 	private JSplitPane splitPane;
 
@@ -103,7 +104,7 @@ public class KMLFormatGUI implements TreeSelectionListener {
 	// Recreate the panels when a new file is opened
 	private void openFile() {
 
-		//count++;
+		hasWrittenOnce = false;
 
 		if (createdGUI) {
 			frmKmlFormatter.getContentPane().remove(splitPane);//Remove the split pane so we can add a new one, 
@@ -701,7 +702,7 @@ public class KMLFormatGUI implements TreeSelectionListener {
 							.browse(URI
 									.create("http://mrdata.usgs.gov/geology/state/"));
 				} catch (IOException e) {
-					// TODO Auto-generated catch block
+					
 					e.printStackTrace();
 				}
 			}
@@ -719,7 +720,7 @@ public class KMLFormatGUI implements TreeSelectionListener {
 			public void mouseReleased(MouseEvent arg0) {
 
 				JOptionPane.showMessageDialog(frmKmlFormatter,
-						"USGS KML Formatter. Developed by Jack Jamieson 2015.");
+						"USGS KML Formatter. Developed by Jack Jamieson 2015.\nhttp://www.jackjamieson.me");
 
 			}
 		});
@@ -741,7 +742,7 @@ public class KMLFormatGUI implements TreeSelectionListener {
 		try {
 			editorKit.insertHTML(doc, doc.getLength(), text, 0, 0, null);
 		} catch (BadLocationException | IOException e) {
-			// TODO Auto-generated catch block
+			
 			e.printStackTrace();
 		}
 
@@ -756,7 +757,7 @@ public class KMLFormatGUI implements TreeSelectionListener {
 		try {
 			editorKit.insertHTML(doc, doc.getLength(), text, 0, 0, null);
 		} catch (BadLocationException | IOException e) {
-			// TODO Auto-generated catch block
+			
 			e.printStackTrace();
 		}
 
@@ -799,7 +800,12 @@ public class KMLFormatGUI implements TreeSelectionListener {
 
 	// Useful for finding features from just the name of the placemark
 	public Pmark findFeatureFromString(String placemarkName) {
-		List<Feature> placemarks = parse.getFeatures();
+		List<Feature> placemarks;
+		
+		if(hasWrittenOnce)
+			placemarks = parse.secondaryGetFeatures();
+		else
+			placemarks = parse.getFeatures();
 
 		for (Object obj : placemarks) {
 			if (obj instanceof Placemark) {
@@ -810,16 +816,6 @@ public class KMLFormatGUI implements TreeSelectionListener {
 					return pmark;
 				}
 			}
-			if(obj instanceof Folder){
-				Folder f = (Folder) obj;
-				System.out.println(f.getName());
-				/*Pmark pmark = new Pmark(f.getName(), f.getDescription(),
-						f.getStyleUrl());
-				if (pmark.getName().equals(placemarkName)) {
-					return pmark;
-				}*/
-			}
-
 		}
 
 		return null;
@@ -828,10 +824,18 @@ public class KMLFormatGUI implements TreeSelectionListener {
 	// Rewrite 'all' for kml and kmz
 	public void reWriteAll(final boolean isKML, final File file) {
 
-		List<Feature> placemarks = parse.getFeatures();
-		Object[] placm = placemarks.toArray();
+		Object[] placm;
+		
+		if(hasWrittenOnce){
+			List<Feature> placemarks = parse.secondaryGetFeatures();
+			placm = placemarks.toArray();
+		}
+		else{
+			List<Feature> placemarks = parse.getFeatures();
+			placm = placemarks.toArray();
+		}
+		
 
-		// parse.deleteSepFolders();
 		parse.createSepFolders();
 
 		for (String str : ages) {
@@ -844,7 +848,7 @@ public class KMLFormatGUI implements TreeSelectionListener {
 				try {
 					Placemark p = (Placemark) obj;
 					if (Pmark.getAgeGlobal(p.getName()).equals(str)) {
-						parse.addToFolderNoDelete(folder, p);
+						parse.addToFolder(folder, p);
 
 					}
 				} catch (ClassCastException e2) {
@@ -933,6 +937,7 @@ public class KMLFormatGUI implements TreeSelectionListener {
 				mntmOpenKml.setEnabled(true);
 				progressBar.setVisible(false);
 
+				hasWrittenOnce = true;
 			}
 		}
 
@@ -941,9 +946,17 @@ public class KMLFormatGUI implements TreeSelectionListener {
 
 	// Rewrite kml and kmz for the rest of the options
 	public void reWriteOther(final boolean isKML, Option option, final File file) {
-		List<Feature> placemarks = parse.getFeatures();
-		Object[] placm = placemarks.toArray();
-
+		
+		Object[] placm;
+		
+		if(hasWrittenOnce){
+			List<Feature> placemarks = parse.secondaryGetFeatures();
+			placm = placemarks.toArray();
+		}
+		else{
+			List<Feature> placemarks = parse.getFeatures();
+			placm = placemarks.toArray();
+		}
 		// parse.deleteSepFolders();
 
 		parse.createSepFolders();
@@ -1062,6 +1075,8 @@ public class KMLFormatGUI implements TreeSelectionListener {
 
 				mntmOpenKml.setEnabled(true);
 				progressBar.setVisible(false);
+				
+				hasWrittenOnce = true;
 
 			}
 		}

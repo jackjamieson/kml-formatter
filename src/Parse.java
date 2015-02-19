@@ -95,9 +95,25 @@ public class Parse {
 		return t;
 
 	}
+	
+	// Useful for getting the set of features after they have been moved to the 'marks' folder.
+	public List<Feature> secondaryGetFeatures() {
+		
+		List<Feature> t = (List<Feature>) marks.getFeature();
+
+		return t;
+
+	}
 
 	//Create new folders in the in-memory KML
 	public void createSepFolders() {
+		
+		// Remove the old folders before making new ones so the next export does not get cluttered.
+		document.getFeature().remove(marks);
+		document.getFeature().remove(groups);
+		document.getFeature().remove(ages);
+		document.getFeature().remove(agesWithLithic);
+
 
 		marks = document.createAndAddFolder();
 		marks.setName("Features");
@@ -112,20 +128,9 @@ public class Parse {
 		agesWithLithic.setName("Ages with Lithic Subgroups");
 
 	}
-	
-	
-
-	public void deleteSepFolders() {
-		//document.getFeature().remove(marks);
-		
-		document.getFeature().remove(groups);
-		document.getFeature().remove(ages);
-		document.getFeature().remove(agesWithLithic);
-
-	}
 
 	public Folder addLithicGroupFolders(String folderName) {
-		// D
+		
 		Folder folder = groups.createAndAddFolder();
 		folder.setName(folderName);
 
@@ -150,21 +155,24 @@ public class Parse {
 		return folder;
 	}
 
+	// The standard add, add the given placemark to the given folder, remove it afterwards from the top level.
 	public void addToFolder(Folder folder, Placemark placemark) {
 		folder.getFeature().add(placemark);
 		marks.getFeature().add(placemark);
-		//document.getFeature().remove(placemark);//TODO:This causes anything after the first export to not contain subfolders.
+		document.getFeature().remove(placemark);//By removing them, the second time we export we need to check somewhere else
+												//aka the 'marks' folder.
 
 	}
 	
 
 
-	
+	// Add a folder to another folder.
 	public void addToFolder(Folder folder, Folder folder2) {
 		folder.getFeature().add(folder2);
 		
 	}
 
+	// The given placemark to the given folder, and don't delete it.
 	public void addToFolderNoDelete(Folder folder, Placemark placemark) {
 		folder.getFeature().add(placemark);
 
@@ -173,10 +181,8 @@ public class Parse {
 	public void reWriteKML(String fileName) {
 
 		try {
-			kml.marshal(new File(fileName));
-			//toOrig();
+			kml.marshal(new File(fileName));//Write the file to a KML.
 		} catch (FileNotFoundException e) {
-			// TODO Auto-generated catch block
 			e.printStackTrace();
 		}
 
@@ -185,10 +191,8 @@ public class Parse {
 	public void reWriteKMZ(String fileName) {
 
 		try {
-			kml.marshalAsKmz(fileName, kml);
-			// kml.marshal(new File(fileName));
+			kml.marshalAsKmz(fileName, kml);//Write the file to a KMZ.
 		} catch (IOException e) {
-			// TODO Auto-generated catch block
 			e.printStackTrace();
 		}
 
