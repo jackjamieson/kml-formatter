@@ -23,17 +23,12 @@ public class Parse {
 
 	private Kml kml;
 	private Document document;
-	private Document ageDoc;
-	private Document lithDoc;
-	private Document ageWLithDoc;
-
+	private Document origDoc;
 	private Folder marks;
 	private Folder groups;
 	private Folder ages;
 	private Folder agesWithLithic;
 
-
-	
 	public Parse() {
 
 	}
@@ -59,10 +54,7 @@ public class Parse {
 			if (!isKMZ) {
 				kml = Kml.unmarshal(bais);
 				document = (Document) kml.getFeature();
-				ageDoc = (Document) kml.getFeature();
-				lithDoc = (Document) kml.getFeature();
-				ageWLithDoc = (Document) kml.getFeature();
-
+				origDoc = (Document) kml.getFeature();
 			}
 			else {
 				JOptionPane.showMessageDialog(null, "KMZ files are not supported.", "Error", 2);
@@ -95,25 +87,9 @@ public class Parse {
 		return t;
 
 	}
-	
-	// Useful for getting the set of features after they have been moved to the 'marks' folder.
-	public List<Feature> secondaryGetFeatures() {
-		
-		List<Feature> t = (List<Feature>) marks.getFeature();
-
-		return t;
-
-	}
 
 	//Create new folders in the in-memory KML
 	public void createSepFolders() {
-		
-		// Remove the old folders before making new ones so the next export does not get cluttered.
-		document.getFeature().remove(marks);
-		document.getFeature().remove(groups);
-		document.getFeature().remove(ages);
-		document.getFeature().remove(agesWithLithic);
-
 
 		marks = document.createAndAddFolder();
 		marks.setName("Features");
@@ -129,8 +105,17 @@ public class Parse {
 
 	}
 
-	public Folder addLithicGroupFolders(String folderName) {
+	public void deleteSepFolders() {
+		//document.getFeature().remove(marks);
 		
+		document.getFeature().remove(groups);
+		document.getFeature().remove(ages);
+		document.getFeature().remove(agesWithLithic);
+
+	}
+
+	public Folder addLithicGroupFolders(String folderName) {
+		// D
 		Folder folder = groups.createAndAddFolder();
 		folder.setName(folderName);
 
@@ -155,24 +140,18 @@ public class Parse {
 		return folder;
 	}
 
-	// The standard add, add the given placemark to the given folder, remove it afterwards from the top level.
 	public void addToFolder(Folder folder, Placemark placemark) {
 		folder.getFeature().add(placemark);
 		marks.getFeature().add(placemark);
-		document.getFeature().remove(placemark);//By removing them, the second time we export we need to check somewhere else
-												//aka the 'marks' folder.
+		document.getFeature().remove(placemark);
 
 	}
 	
-
-
-	// Add a folder to another folder.
 	public void addToFolder(Folder folder, Folder folder2) {
 		folder.getFeature().add(folder2);
 		
 	}
 
-	// The given placemark to the given folder, and don't delete it.
 	public void addToFolderNoDelete(Folder folder, Placemark placemark) {
 		folder.getFeature().add(placemark);
 
@@ -181,8 +160,10 @@ public class Parse {
 	public void reWriteKML(String fileName) {
 
 		try {
-			kml.marshal(new File(fileName));//Write the file to a KML.
+			kml.marshal(new File(fileName));
+			//toOrig();
 		} catch (FileNotFoundException e) {
+			// TODO Auto-generated catch block
 			e.printStackTrace();
 		}
 
@@ -191,13 +172,17 @@ public class Parse {
 	public void reWriteKMZ(String fileName) {
 
 		try {
-			kml.marshalAsKmz(fileName, kml);//Write the file to a KMZ.
+			kml.marshalAsKmz(fileName, kml);
+			// kml.marshal(new File(fileName));
 		} catch (IOException e) {
+			// TODO Auto-generated catch block
 			e.printStackTrace();
 		}
 
 	}
 	
-
+	public void toOrig(){
+		document = origDoc;
+	}
 
 }

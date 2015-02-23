@@ -33,6 +33,7 @@ import javax.swing.text.html.HTMLEditorKit;
 import javax.swing.tree.DefaultMutableTreeNode;
 import javax.swing.tree.TreeSelectionModel;
 
+import de.micromata.opengis.kml.v_2_2_0.Delete;
 import de.micromata.opengis.kml.v_2_2_0.Feature;
 import de.micromata.opengis.kml.v_2_2_0.Folder;
 import de.micromata.opengis.kml.v_2_2_0.Placemark;
@@ -59,7 +60,6 @@ public class KMLFormatGUI implements TreeSelectionListener {
 
 	private Boolean hasFile = false;
 	private Boolean createdGUI = false;
-	private Boolean hasWrittenOnce = false;
 
 	private JSplitPane splitPane;
 
@@ -67,10 +67,8 @@ public class KMLFormatGUI implements TreeSelectionListener {
 	private JMenuItem mntmOpenKml;
 	private JMenu mnExportAs;
 	private JMenu mnExportAsKmz;
-	
-	List<Feature> placemarksWriting;
 
-	//private int count = 0;//Used to keep track of file opening.
+	private int count = 0;
 
 	private enum Option {
 		AGE, LITHIC, AGEWLITHIC
@@ -104,23 +102,20 @@ public class KMLFormatGUI implements TreeSelectionListener {
 	// Recreate the panels when a new file is opened
 	private void openFile() {
 
-		hasWrittenOnce = false;
+		count++;
 
 		if (createdGUI) {
-			frmKmlFormatter.getContentPane().remove(splitPane);//Remove the split pane so we can add a new one, 
-															   //otherwise it will double.
+			frmKmlFormatter.getContentPane().remove(splitPane);
 
 		}
 		if (!createdGUI) {
 			createdGUI = true;
 		}
 
-		//Recreate the nodes.
 		DefaultMutableTreeNode top = new DefaultMutableTreeNode(
 				parse.getDocumentName());
 		createNodes(top);
 
-		//Redo the settings on the tree.
 		tree = new JTree(top);
 		tree.getSelectionModel().setSelectionMode(
 				TreeSelectionModel.SINGLE_TREE_SELECTION);
@@ -143,25 +138,8 @@ public class KMLFormatGUI implements TreeSelectionListener {
 
 		frmKmlFormatter.getContentPane().add(splitPane);
 
-		frmKmlFormatter.validate();//Apply it.
+		frmKmlFormatter.validate();
 
-	}
-	
-	//When the file is a KMZ, just remove the features of the GUI until user loads KML.
-	public void clearGUI(){
-		
-		if (createdGUI) {
-			frmKmlFormatter.getContentPane().remove(splitPane);//Remove the split pane so we can add a new one, 
-															   //otherwise it will double.
-
-		}
-		mnExportAs.setEnabled(false);
-		mnExportAsKmz.setEnabled(false);
-		
-		frmKmlFormatter.repaint();
-		
-		frmKmlFormatter.validate();//Apply it.
-	
 	}
 
 	// Prepare for agnostic use?
@@ -461,9 +439,6 @@ public class KMLFormatGUI implements TreeSelectionListener {
 									if (selectedFile.getName().contains("kmz")) {
 										parse = new Parse(is, true);
 										parse = null;
-										clearGUI();
-										
-
 									} else {
 										parse = new Parse(is, false);
 										openFile();
@@ -478,13 +453,9 @@ public class KMLFormatGUI implements TreeSelectionListener {
 							}
 
 							protected void done() {
+								mnExportAs.setEnabled(true);
+								mnExportAsKmz.setEnabled(true);
 								mntmOpenKml.setEnabled(true);
-
-								//Parse is null when you try to load a KMZ, so don't let user save anything here
-								if(parse != null){
-									mnExportAsKmz.setEnabled(true);
-									mnExportAs.setEnabled(true);
-								}
 
 								progressBar.setVisible(false);
 
@@ -602,73 +573,15 @@ public class KMLFormatGUI implements TreeSelectionListener {
 
 		mnFile.add(mnExportAsKmz);
 
-		//Export lithic as KMZ
 		JMenuItem mntmLithicGroup = new JMenuItem("Lithic Group");
-		mntmLithicGroup.addMouseListener(new MouseAdapter() {
-			@Override
-			public void mouseReleased(MouseEvent arg0) {
-				
-				int returnVal = fc.showSaveDialog(null);
-
-				if (returnVal == JFileChooser.APPROVE_OPTION) {
-					mntmOpenKml.setEnabled(false);
-					mnExportAs.setEnabled(false);
-					mnExportAsKmz.setEnabled(false);
-
-					final File file = fc.getSelectedFile();
-
-					reWriteOther(false, Option.LITHIC, file);
-
-				}
-			}
-		});
 		mnExportAsKmz.add(mntmLithicGroup);
 
-		//Export age as KMZ
 		JMenuItem mntmAge = new JMenuItem("Age");
-		mntmAge.addMouseListener(new MouseAdapter() {
-			@Override
-			public void mouseReleased(MouseEvent e) {
-				
-				int returnVal = fc.showSaveDialog(null);
-
-				if (returnVal == JFileChooser.APPROVE_OPTION) {
-					mntmOpenKml.setEnabled(false);
-					mnExportAs.setEnabled(false);
-					mnExportAsKmz.setEnabled(false);
-
-					final File file = fc.getSelectedFile();
-
-					reWriteOther(false, Option.AGE, file);
-
-				}
-			}
-		});
 		mnExportAsKmz.add(mntmAge);
 
-		//Export age with lithic subgroups as KMZ
 		JMenuItem mntmAgeWithLithic = new JMenuItem("Age with Lithic Subgroup");
-		mntmAgeWithLithic.addMouseListener(new MouseAdapter() {
-			@Override
-			public void mouseReleased(MouseEvent e) {
-				
-				int returnVal = fc.showSaveDialog(null);
-
-				if (returnVal == JFileChooser.APPROVE_OPTION) {
-					mntmOpenKml.setEnabled(false);
-					mnExportAs.setEnabled(false);
-					mnExportAsKmz.setEnabled(false);
-
-					final File file = fc.getSelectedFile();
-
-					reWriteOther(false, Option.AGEWLITHIC, file);
-
-				}
-			}
-		});
 		mnExportAsKmz.add(mntmAgeWithLithic);
 
-		//Export all folders as KMZ
 		JMenuItem mntmKmz = new JMenuItem("All");
 		mnExportAsKmz.add(mntmKmz);
 		mntmKmz.addMouseListener(new MouseAdapter() {
@@ -702,7 +615,7 @@ public class KMLFormatGUI implements TreeSelectionListener {
 							.browse(URI
 									.create("http://mrdata.usgs.gov/geology/state/"));
 				} catch (IOException e) {
-					
+					// TODO Auto-generated catch block
 					e.printStackTrace();
 				}
 			}
@@ -720,7 +633,7 @@ public class KMLFormatGUI implements TreeSelectionListener {
 			public void mouseReleased(MouseEvent arg0) {
 
 				JOptionPane.showMessageDialog(frmKmlFormatter,
-						"USGS KML Formatter. Developed by Jack Jamieson 2015.\nhttp://www.jackjamieson.me");
+						"USGS KML Formatter. Developed by Jack Jamieson 2015.");
 
 			}
 		});
@@ -742,7 +655,7 @@ public class KMLFormatGUI implements TreeSelectionListener {
 		try {
 			editorKit.insertHTML(doc, doc.getLength(), text, 0, 0, null);
 		} catch (BadLocationException | IOException e) {
-			
+			// TODO Auto-generated catch block
 			e.printStackTrace();
 		}
 
@@ -757,7 +670,7 @@ public class KMLFormatGUI implements TreeSelectionListener {
 		try {
 			editorKit.insertHTML(doc, doc.getLength(), text, 0, 0, null);
 		} catch (BadLocationException | IOException e) {
-			
+			// TODO Auto-generated catch block
 			e.printStackTrace();
 		}
 
@@ -800,12 +713,7 @@ public class KMLFormatGUI implements TreeSelectionListener {
 
 	// Useful for finding features from just the name of the placemark
 	public Pmark findFeatureFromString(String placemarkName) {
-		List<Feature> placemarks;
-		
-		if(hasWrittenOnce)
-			placemarks = parse.secondaryGetFeatures();
-		else
-			placemarks = parse.getFeatures();
+		List<Feature> placemarks = parse.getFeatures();
 
 		for (Object obj : placemarks) {
 			if (obj instanceof Placemark) {
@@ -816,6 +724,16 @@ public class KMLFormatGUI implements TreeSelectionListener {
 					return pmark;
 				}
 			}
+			if(obj instanceof Folder){
+				Folder f = (Folder) obj;
+				System.out.println(f.getName());
+				/*Pmark pmark = new Pmark(f.getName(), f.getDescription(),
+						f.getStyleUrl());
+				if (pmark.getName().equals(placemarkName)) {
+					return pmark;
+				}*/
+			}
+
 		}
 
 		return null;
@@ -824,18 +742,10 @@ public class KMLFormatGUI implements TreeSelectionListener {
 	// Rewrite 'all' for kml and kmz
 	public void reWriteAll(final boolean isKML, final File file) {
 
-		Object[] placm;
-		
-		if(hasWrittenOnce){
-			List<Feature> placemarks = parse.secondaryGetFeatures();
-			placm = placemarks.toArray();
-		}
-		else{
-			List<Feature> placemarks = parse.getFeatures();
-			placm = placemarks.toArray();
-		}
-		
+		List<Feature> placemarks = parse.getFeatures();
+		Object[] placm = placemarks.toArray();
 
+		// parse.deleteSepFolders();
 		parse.createSepFolders();
 
 		for (String str : ages) {
@@ -848,7 +758,7 @@ public class KMLFormatGUI implements TreeSelectionListener {
 				try {
 					Placemark p = (Placemark) obj;
 					if (Pmark.getAgeGlobal(p.getName()).equals(str)) {
-						parse.addToFolder(folder, p);
+						parse.addToFolderNoDelete(folder, p);
 
 					}
 				} catch (ClassCastException e2) {
@@ -915,7 +825,7 @@ public class KMLFormatGUI implements TreeSelectionListener {
 			}
 
 		}
-		//count = 0;
+		count = 0;
 		progressBar.setVisible(true);
 		progressBar.setIndeterminate(true);
 		class MyWorker extends SwingWorker<String, Void> {
@@ -937,7 +847,6 @@ public class KMLFormatGUI implements TreeSelectionListener {
 				mntmOpenKml.setEnabled(true);
 				progressBar.setVisible(false);
 
-				hasWrittenOnce = true;
 			}
 		}
 
@@ -946,17 +855,9 @@ public class KMLFormatGUI implements TreeSelectionListener {
 
 	// Rewrite kml and kmz for the rest of the options
 	public void reWriteOther(final boolean isKML, Option option, final File file) {
-		
-		Object[] placm;
-		
-		if(hasWrittenOnce){
-			List<Feature> placemarks = parse.secondaryGetFeatures();
-			placm = placemarks.toArray();
-		}
-		else{
-			List<Feature> placemarks = parse.getFeatures();
-			placm = placemarks.toArray();
-		}
+		List<Feature> placemarks = parse.getFeatures();
+		Object[] placm = placemarks.toArray();
+
 		// parse.deleteSepFolders();
 
 		parse.createSepFolders();
@@ -1053,7 +954,7 @@ public class KMLFormatGUI implements TreeSelectionListener {
 
 		}
 
-		//count = 0;
+		count = 0;
 		progressBar.setVisible(true);
 		progressBar.setIndeterminate(true);
 		class MyWorker extends SwingWorker<String, Void> {
@@ -1075,8 +976,6 @@ public class KMLFormatGUI implements TreeSelectionListener {
 
 				mntmOpenKml.setEnabled(true);
 				progressBar.setVisible(false);
-				
-				hasWrittenOnce = true;
 
 			}
 		}
